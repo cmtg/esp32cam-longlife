@@ -17,7 +17,6 @@
 */
 
 #include "esp32cam-longlife-cam.h"
-#include <Arduino.h>
 
 int setup_camera() {
   

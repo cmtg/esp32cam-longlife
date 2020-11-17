@@ -19,9 +19,8 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include "UniversalTelegramBotRZO.h"
-#include "esp32cam-longlife-cam.h"
 #include "settings.h"
-#include "SerialDebug.h"
+#include "esp32cam-longlife-cam.h"
 
 // Functions
 void send_picture(String chat_id, camera_fb_t * fb);

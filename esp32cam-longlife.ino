@@ -36,6 +36,7 @@
 
 #include "esp32cam-longlife-cam.h"
 #include "esp32cam-longlife-bot.h"
+#include "esp32cam-longlife-log.h"
 
 // Define se o ULP (Ultra Low Power Processor) será usado (on/off)
 #define ULP_ON 1 
@@ -50,7 +51,7 @@
 #define DEBUG_ERROR 2 
 #define DEBUG_CRITICAL 1 
 #define DEBUG_OFF 0 
-#define DEBUG_LEVEL DEBUG_DEBUG
+#define DEBUG_LEVEL DEBUG_VERBOSE
 
 // PIR SENSOR
 #define PIR_SENSOR_GPIO GPIO_NUM_12
@@ -86,12 +87,16 @@ void setup()
   configure_camera();
   connect_wifi();
 
+  #if ULP == ULP_OFF
+    log_to_thingspeak("Device booted");
+  #endif   
 
-  #if ULP == ULP_ON    
+
+  #if ULP == ULP_ON        
     // Verifique porque o esp32 acordou 
     #if DEBUG_LEVEL >= DEBUG_DEBUG
-       Serial.print(F(""));
-       Serial.print(F("Discovering wakeup cause:"));
+       Serial.println(F(""));
+       Serial.println(F("Discovering wakeup cause:"));
     #endif
      
     esp_sleep_wakeup_cause_t wakeup_reason;
@@ -109,6 +114,9 @@ void setup()
             break;
         case ESP_SLEEP_WAKEUP_TIMER: 
             check_telegram_commands(); 
+            break;
+        default:
+            log_to_thingspeak("Device booted");
             break;
       }
 
@@ -216,6 +224,8 @@ void send_alerts() {
       Serial.println(ALERT_CHAT_ID);
       Serial.println(F(""));
    #endif
+   
+  log_to_thingspeak("PIR sensor detected movement, sending Telegram alert and a picture");
   
   String msg = "Alerta: Movimento detectado pela camera ";
   msg.concat(CAMERA_NAME);
@@ -242,7 +252,10 @@ void send_alerts() {
         send_picture(ALERT_CHAT_ID,fb); 
         esp_camera_fb_return(fb);
       } else {
-        printlnW(F("Error: Couldn't take picture!"));         
+        #if DEBUG_LEVEL >= DEBUG_ERROR
+          Serial.println(F("Error: Could not take picture!"));         
+        #endif
+       log_to_thingspeak("Error: Could not take picture!");
       }
   
       lasttime_alert = millis();      
@@ -258,6 +271,12 @@ void send_alerts() {
 
 void check_telegram_commands() {
     camera_fb_t * fb;
+    
+    #if DEBUG_LEVEL >= DEBUG_VERBOSE
+       Serial.println(F(""));
+       Serial.println(F("Send a keepalive message to Thingsspeak"));
+    #endif
+    log_to_thingspeak("Camera is alive");
 
     #if DEBUG_LEVEL >= DEBUG_DEBUG
       Serial.print(F("Checking for command '/img' in chat_id "));
@@ -265,6 +284,7 @@ void check_telegram_commands() {
     #endif
     
     if ( check_for_command_in_chat_id("/img", ALERT_CHAT_ID) ) { 
+      log_to_thingspeak("Got a /img request, sending picture");
       #if DEBUG_LEVEL >= DEBUG_INFO
         Serial.print(F("Command /img found for chat_id ")); 
         Serial.println(ALERT_CHAT_ID);
@@ -278,9 +298,10 @@ void check_telegram_commands() {
         send_picture(ALERT_CHAT_ID,fb); 
         esp_camera_fb_return(fb);
       } else {
-       #if DEBUG_LEVEL >= DEBUG_WARN
-        Serial.println(F("Error: Couldn't take picture!")); 
+       #if DEBUG_LEVEL >= DEBUG_ERROR
+        Serial.println(F("Error: Could not take picture!")); 
        #endif   
+       log_to_thingspeak("Error: Could not take picture!");
       }
     }  
 }

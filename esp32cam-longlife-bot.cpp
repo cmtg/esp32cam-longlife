@@ -18,9 +18,9 @@
 
 #include "esp32cam-longlife-bot.h"
 
+WiFiClientSecure client_bot;
+UniversalTelegramBot bot(BOTtoken, client_bot);
 
-WiFiClientSecure client;
-UniversalTelegramBot bot(BOTtoken, client);
 
 size_t fb_length;
 uint8_t* fb_buffer;
